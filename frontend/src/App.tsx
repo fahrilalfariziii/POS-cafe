@@ -20,7 +20,7 @@ import { OwnerSettingsPage } from './features/owner/pages/OwnerSettingsPage'
 export default function App() {
   return (
     <CafeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
