@@ -25,7 +25,7 @@ export function MenuScreen({
   cart,
   onSelectItem,
   onGoCart,
-  onGoOrder,
+  // onGoOrder,
 }: Props) {
   const { business, categories } = useCafe();
   const [search, setSearch] = useState("");
@@ -102,9 +102,6 @@ export function MenuScreen({
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {filtered.map((item) => {
               const qty = qtyFor(item.id);
-              const last = [...cart]
-                .reverse()
-                .find((c) => c.productId === item.id);
               return (
                 <div
                   key={item.id}
@@ -149,7 +146,7 @@ export function MenuScreen({
                       {item.isAvailable && (
                         <button
                           className="flex size-8 items-center justify-center rounded-full bg-[#2f3e2a] transition-transform active:scale-95"
-                          onClick={() => onSelectItem(item)}
+                          onClick={() =>  onSelectItem(item)}
                           aria-label={`Tambah ${item.name} ke keranjang`}
                         >
                           <IconPlus />
