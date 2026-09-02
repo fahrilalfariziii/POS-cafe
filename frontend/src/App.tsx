@@ -1,22 +1,28 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { CafeProvider } from './mock/store'
-import { LandingPage } from './features/landing/LandingPage'
-import { LoginPage } from './features/auth/LoginPage'
-import { RequireAuth } from './features/auth/RequireAuth'
-import { SelfOrderApp } from './features/self-order/SelfOrderApp'
-import { PosLayout } from './features/pos/PosLayout'
-import { OrdersPage } from './features/pos/pages/OrdersPage'
-import { CatalogPage } from './features/pos/pages/CatalogPage'
-import { InventoryPage } from './features/pos/pages/InventoryPage'
-import { ManualOrderPage } from './features/pos/pages/ManualOrderPage'
-import { PosSettingsPage } from './features/pos/pages/PosSettingsPage'
-import { OwnerLayout } from './features/owner/OwnerLayout'
-import { DashboardPage } from './features/owner/pages/DashboardPage'
-import { SalesPage } from './features/owner/pages/SalesPage'
-import { MenuCatalogPage } from './features/owner/pages/MenuCatalogPage'
-import { TablesPage } from './features/owner/pages/TablesPage'
-import { OwnerSettingsPage } from './features/owner/pages/OwnerSettingsPage'
-
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { CafeProvider } from "./mock/store";
+import { LandingPage } from "./features/landing/LandingPage";
+import { LoginPage } from "./features/auth/LoginPage";
+import { RequireAuth } from "./features/auth/RequireAuth";
+import { SelfOrderApp } from "./features/self-order/SelfOrderApp";
+import { PosLayout } from "./features/pos/PosLayout";
+import { OrdersPage } from "./features/pos/pages/OrdersPage";
+import { CatalogPage } from "./features/pos/pages/CatalogPage";
+import { InventoryPage } from "./features/pos/pages/InventoryPage";
+import { ManualOrderPage } from "./features/pos/pages/ManualOrderPage";
+import { PosSettingsPage } from "./features/pos/pages/PosSettingsPage";
+import { OwnerLayout } from "./features/owner/OwnerLayout";
+import { DashboardPage } from "./features/owner/pages/DashboardPage";
+import { SalesOmsetPage } from "./features/owner/pages/sales/SalesOmsetPage";
+import { SalesPerformancePage } from "./features/owner/pages/sales/SalesPerformancePage";
+import { SalesHistoryPage } from "./features/owner/pages/sales/SalesHistoryPage";
+import { MenuCatalogPage } from "./features/owner/pages/menu/MenuCatalogPage";
+import { MenuCategoriesPage } from "./features/owner/pages/menu/MenuCategoriesPage";
+import { MenuVariantsPage } from "./features/owner/pages/menu/MenuVariantsPage";
+import { TablesPage } from "./features/owner/pages/TablesPage";
+import { StaffPage } from "./features/owner/pages/StaffPage";
+import { OwnerSettingsPage } from "./features/owner/pages/OwnerSettingsPage";
+import { ProfileSettingsPage } from "./features/owner/pages/settings/ProfileSettingsPage";
+import { CafeSettingsPage } from "./features/owner/pages/settings/CafeSettingsPage";
 export default function App() {
   return (
     <CafeProvider>
@@ -25,10 +31,15 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/order/:token" element={<SelfOrderApp />} />
+
+          {/* POS ROUTES */}
           <Route
             path="/pos"
             element={
-              <RequireAuth roles={['kasir', 'barista', 'owner']} redirectTo="/pos/orders">
+              <RequireAuth
+                roles={["kasir", "barista", "owner"]}
+                redirectTo="/pos/orders"
+              >
                 <PosLayout />
               </RequireAuth>
             }
@@ -40,23 +51,43 @@ export default function App() {
             <Route path="manual" element={<ManualOrderPage />} />
             <Route path="settings" element={<PosSettingsPage />} />
           </Route>
+
+          {/* OWNER ROUTES */}
           <Route
             path="/owner"
             element={
-              <RequireAuth roles={['owner']} redirectTo="/owner/dashboard">
+              <RequireAuth roles={["owner"]} redirectTo="/owner/dashboard">
                 <OwnerLayout />
               </RequireAuth>
             }
           >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="sales" element={<SalesPage />} />
-            <Route path="menu" element={<MenuCatalogPage />} />
+
+            {/* NESTED SALES ROUTES */}
+            <Route path="sales">
+              <Route index element={<Navigate to="omset" replace />} />
+              <Route path="omset" element={<SalesOmsetPage />} />
+              <Route path="performa" element={<SalesPerformancePage />} />
+              <Route path="riwayat" element={<SalesHistoryPage />} />
+            </Route>
+
+            <Route path="menu">
+              <Route index element={<Navigate to="catalog" replace />} />
+              <Route path="catalog" element={<MenuCatalogPage />} />
+              <Route path="categories" element={<MenuCategoriesPage />} />
+              <Route path="variants" element={<MenuVariantsPage />} />
+            </Route>
             <Route path="tables" element={<TablesPage />} />
-            <Route path="settings" element={<OwnerSettingsPage />} />
+            <Route path="staff" element={<StaffPage />} />
+            <Route path="settings" element={<OwnerSettingsPage />}>
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<ProfileSettingsPage />} />
+              <Route path="cafe" element={<CafeSettingsPage />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
     </CafeProvider>
-  )
+  );
 }

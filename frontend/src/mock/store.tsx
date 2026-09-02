@@ -22,6 +22,7 @@ import type {
   Business,
   CafeTable,
   CartItem,
+  Category,
   ConnectionStatus,
   Ingredient,
   Order,
@@ -41,7 +42,7 @@ interface Session {
 interface CafeStore {
   business: Business
   staff: StaffUser[]
-  categories: { id: string; name: string; sortOrder: number }[]
+  categories: Category[]
   products: Product[]
   tables: CafeTable[]
   orders: Order[]
@@ -66,12 +67,15 @@ interface CafeStore {
   toggleProductAvailability: (productId: string) => void
   upsertProduct: (product: Product) => void
   removeProduct: (productId: string) => void
+  upsertCategory: (category: Category) => void
+  removeCategory: (categoryId: string) => void
   upsertTable: (table: CafeTable) => void
   removeTable: (tableId: string) => void
   upsertIngredient: (ingredient: Ingredient) => void
   recordStock: (ingredientId: string, type: StockMovement['type'], quantity: number, notes: string) => void
   updateBusiness: (patch: Partial<Business>) => void
   upsertStaff: (user: StaffUser) => void
+  removeStaff: (staffId: string) => void 
   setConnection: (status: ConnectionStatus) => void
   syncNow: () => void
 }
@@ -81,6 +85,7 @@ const CafeContext = createContext<CafeStore | null>(null)
 export function CafeProvider({ children }: { children: ReactNode }) {
   const [business, setBusiness] = useState(seedBusiness)
   const [staff, setStaff] = useState(seedStaff)
+  const [categories, setCategories] = useState<Category[]>(seedCategories)
   const [products, setProducts] = useState(seedProducts)
   const [tables, setTables] = useState(seedTables)
   const [orders, setOrders] = useState(seedOrders)
@@ -173,6 +178,20 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     setProducts((prev) => prev.filter((p) => p.id !== productId))
   }, [])
 
+  const upsertCategory = useCallback((category: Category) => {
+    setCategories((prev) => {
+      const i = prev.findIndex((c) => c.id === category.id)
+      if (i === -1) return [...prev, category]
+      const next = [...prev]
+      next[i] = category
+      return next
+    })
+  }, [])
+
+  const removeCategory = useCallback((categoryId: string) => {
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId))
+  }, [])
+
   const upsertTable = useCallback((table: CafeTable) => {
     setTables((prev) => {
       const i = prev.findIndex((t) => t.id === table.id)
@@ -236,6 +255,10 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const removeStaff = useCallback((staffId: string) => {
+    setStaff((prevStaff) => prevStaff.filter((s) => String(s.id) !== String(staffId)))
+  }, [])
+
   const syncNow = useCallback(() => {
     setConnection('syncing')
     window.setTimeout(() => {
@@ -248,7 +271,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     () => ({
       business,
       staff,
-      categories: seedCategories,
+      categories,
       products,
       tables,
       orders,
@@ -265,18 +288,22 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       toggleProductAvailability,
       upsertProduct,
       removeProduct,
+      upsertCategory,
+      removeCategory,
       upsertTable,
       removeTable,
       upsertIngredient,
       recordStock,
       updateBusiness,
       upsertStaff,
+      removeStaff,
       setConnection,
       syncNow,
     }),
     [
       business,
       staff,
+      categories,
       products,
       tables,
       orders,
@@ -293,6 +320,8 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       toggleProductAvailability,
       upsertProduct,
       removeProduct,
+      upsertCategory,
+      removeCategory,
       upsertTable,
       removeTable,
       upsertIngredient,
