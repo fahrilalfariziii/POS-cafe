@@ -1,0 +1,104 @@
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useCafe } from '../../../mock/store'
+
+const NAV = [
+  { to: '/pos/orders', label: 'Orders', icon: 'receipt_long' },
+  { to: '/pos/catalog', label: 'Catalog', icon: 'menu_book' },
+  { to: '/pos/inventory', label: 'Inventory', icon: 'inventory_2' },
+  { to: '/pos/settings', label: 'Settings', icon: 'settings' },
+]
+
+export function PosHeader() {
+  const {connection, pendingSyncCount, business, syncNow } = useCafe()
+  const navigate = useNavigate()
+
+  return (
+    <header className="flex h-16 items-center justify-between border-b border-[#c4c7c7] px-6">
+      {/* Brand & Connection Status */}
+      <div className="flex items-center gap-3">
+        <span className="font-display text-lg font-semibold">{business.name}</span>
+        
+        <button
+          onClick={() => {
+            if (pendingSyncCount > 0 || connection === 'offline') {
+              syncNow()
+            }
+          }}
+          title={
+            pendingSyncCount > 0
+              ? 'Klik untuk menyinkronkan transaksi offline'
+              : 'Status Koneksi'
+          }
+          className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition-all active:scale-95 ${
+            connection === 'online'
+              ? 'bg-[#b8cda9]/40 text-sage cursor-default'
+              : connection === 'syncing'
+                ? 'bg-sand text-stone cursor-wait'
+                : 'bg-[#ba1a1a]/10 text-[#ba1a1a] hover:bg-[#ba1a1a]/20 cursor-pointer'
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-[14px] ${
+              connection === 'syncing' ? 'animate-spin' : ''
+            }`}
+          >
+            {connection === 'online'
+              ? 'cloud_done'
+              : connection === 'syncing'
+                ? 'sync'
+                : 'cloud_off'}
+          </span>
+
+          <span>
+            {connection}
+            {pendingSyncCount > 0 ? ` · ${pendingSyncCount}` : ''}
+          </span>
+        </button>
+      </div>
+
+      {/* Navigation Icons */}
+      <nav className="flex items-center gap-4">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            title={item.label} // Tooltip bawaan browser saat hover
+            className={({ isActive }) =>
+              `flex size-10 items-center justify-center rounded-[10px] transition-all ${
+                isActive
+                  ? 'bg-black text-white shadow-sm'
+                  : 'text-stone hover:bg-sand hover:text-black'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined text-[22px]">
+              {item.icon}
+            </span>
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Action Buttons & User Session */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/pos/manual')}
+          className="flex items-center gap-1.5 rounded-[12px] bg-black px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-transform active:scale-95"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          <span>New Order</span>
+        </button>
+        {/* <span className="text-xs text-muted">{session?.user.name}</span> */}
+        {/* <button
+          className="flex size-9 items-center justify-center rounded-lg text-muted hover:bg-sand hover:text-black transition-colors"
+          onClick={() => {
+            logout()
+            navigate('/login')
+          }}
+          title="Keluar"
+        >
+          <span className="material-symbols-outlined text-[20px]">logout</span>
+        </button> */}
+      </div>
+    </header>
+  )
+}

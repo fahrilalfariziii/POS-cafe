@@ -1,6 +1,6 @@
 export type UserRole = 'owner' | 'kasir' | 'barista'
 
-export type OrderStatus = 'diterima' | 'diproses' | 'siap'
+export type OrderStatus = 'diterima' | 'diproses' | 'siap' | 'selesai'
 export type PaymentMethod = 'qris' | 'cash' | 'transfer' | 'debit'
 export type PaymentStatus = 'pending' | 'paid' | 'failed'
 export type OrderSource = 'self_order' | 'pos'
