@@ -5,7 +5,7 @@ import type { Ingredient, StockMovementType } from '../../../shared/types'
 import { Button, Field, TextInput } from '../../../shared/components/ui'
 
 export function InventoryPage() {
-  const { ingredients, movements, upsertIngredient, recordStock } = useCafe()
+  const { ingredients, movements, upsertIngredient, removeIngredient, recordStock } = useCafe()
 
   // State Search Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -369,7 +369,10 @@ export function InventoryPage() {
               </Button>
               <Button
                 className="bg-[#ba1a1a] hover:bg-[#ba1a1a]/90 text-white"
-                onClick={() => setDeletingIngredient(null)}
+                onClick={() => {
+                  if (deletingIngredient) removeIngredient(deletingIngredient.id)
+                  setDeletingIngredient(null)
+                }}
               >
                 Hapus
               </Button>

@@ -41,9 +41,9 @@ export function DashboardPage() {
       </div>
       <div className="mb-6 grid grid-cols-3 gap-6">
         {[
-          { label: 'Total Revenue', value: formatRupiah(revenue || 12450000), hint: '+8.5% from yesterday' },
-          { label: 'Total Orders', value: String(paid.length || 86), hint: '+4 vs yesterday' },
-          { label: 'Avg. Transaction', value: formatRupiah(avg || 144767), hint: 'Stabil' },
+          { label: 'Total Revenue', value: formatRupiah(revenue), hint: paid.length ? '+8.5% from yesterday' : 'Belum ada transaksi' },
+          { label: 'Total Orders', value: String(paid.length), hint: paid.length ? '+4 vs yesterday' : 'Belum ada order' },
+          { label: 'Avg. Transaction', value: formatRupiah(Math.round(avg)), hint: paid.length ? 'Stabil' : '-' },
         ].map((k) => (
           <article key={k.label} className="flex h-32 flex-col justify-between rounded-[4px] bg-cream p-6 ring-1 ring-[#e4e2dd]">
             <p className="text-[12px] font-semibold uppercase tracking-[0.6px] text-muted">{k.label}</p>
@@ -72,9 +72,11 @@ export function DashboardPage() {
         <div className="col-span-4 flex flex-col gap-6">
           <section className="rounded-[4px] bg-cream p-5 ring-1 ring-[#e4e2dd]">
             <h2 className="mb-4 text-lg font-semibold">Best Selling</h2>
-            <ul className="space-y-3">
-              {(best.length ? best : [['V60 Pour Over', 42], ['Flat White', 38], ['Almond Croissant', 31]] as [string, number][]).map(
-                ([name, qty]) => (
+            {best.length === 0 ? (
+              <p className="text-sm text-muted">Belum ada penjualan.</p>
+            ) : (
+              <ul className="space-y-3">
+                {best.map(([name, qty]) => (
                   <li key={name} className="flex items-center justify-between">
                     <span className="flex items-center gap-3">
                       <span className="flex size-8 items-center justify-center rounded-[2px] bg-sand text-xs">•</span>
@@ -82,9 +84,9 @@ export function DashboardPage() {
                     </span>
                     <span className="text-sm text-muted">{qty}</span>
                   </li>
-                ),
-              )}
-            </ul>
+                ))}
+              </ul>
+            )}
           </section>
           <section className="rounded-[4px] bg-[#f5f0e7] p-5">
             <h2 className="mb-2 text-sm font-semibold">Status Alerts</h2>

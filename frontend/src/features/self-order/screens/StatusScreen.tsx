@@ -14,12 +14,14 @@ const STEPS: { id: OrderStatus; label: string }[] = [
   { id: 'diterima', label: 'Diterima' },
   { id: 'diproses', label: 'Diproses' },
   { id: 'siap', label: 'Siap' },
+  { id: 'selesai', label: 'Selesai' },
 ]
 
 export function StatusScreen({ order, cart, tableNumber, onOrderAgain }: Props) {
   const { business } = useCafe()
   const status = order?.status ?? 'diterima'
-  const idx = STEPS.findIndex((s) => s.id === status)
+  const rawIdx = STEPS.findIndex((s) => s.id === status)
+  const idx = rawIdx === -1 ? 0 : rawIdx
   const items = order?.items ?? cart.map((c) => ({
     id: c.cartId,
     productName: c.name,
@@ -29,7 +31,7 @@ export function StatusScreen({ order, cart, tableNumber, onOrderAgain }: Props) 
   }))
   const total = order?.total ?? items.reduce((s, i) => s + i.subtotal, 0)
   const headline =
-    status === 'siap' ? 'SIAP DISAJIKAN' : status === 'diproses' ? 'SEDANG DISIAPKAN' : 'PESANAN DITERIMA'
+    status === 'selesai' ? 'PESANAN SELESAI' : status === 'siap' ? 'SIAP DISAJIKAN' : status === 'diproses' ? 'SEDANG DISIAPKAN' : 'PESANAN DITERIMA'
 
   return (
     <div className="flex h-full flex-col bg-paper">

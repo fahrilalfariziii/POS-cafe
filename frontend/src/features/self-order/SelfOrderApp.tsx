@@ -14,7 +14,11 @@ type Screen = 'menu' | 'cart' | 'payment' | 'status'
 export function SelfOrderApp() {
   const { token } = useParams()
   const { tables, products, placeOrder, orders } = useCafe()
-  const table = tables.find((t) => t.qrToken === token && t.isActive) ?? tables.find((t) => t.tableNumber === '04')
+  // Fallback ke meja 04 hanya jika token tidak ada (mis. akses langsung /order tanpa token).
+  // Jika token ada tapi tidak valid/inaktif -> tampilkan error "Meja tidak ditemukan".
+  const fallbackTable = tables.find((t) => t.tableNumber === '04')
+  const tableByToken = token ? tables.find((t) => t.qrToken === token && t.isActive) : undefined
+  const table = token ? (tableByToken ?? null) : (fallbackTable ?? null)
   const [screen, setScreen] = useState<Screen>('menu')
   const [cart, setCart] = useState<CartItem[]>([])
   const [popup, setPopup] = useState<Product | null>(null)
@@ -129,16 +133,14 @@ export function SelfOrderApp() {
             />
           )}
         </main>
-        {popup && (
-          <ItemSheet item={popup} onClose={() => setPopup(null)} onAdd={addToCart} />
-        )}
         <BottomNav
               currentScreen={screen}
               hasActiveOrder={Boolean(activeOrder)}
               onNavigate={(targetScreen) => setScreen(targetScreen)}
               />
-
-          {popup && <ItemSheet item={popup} onClose={() => setPopup(null)} onAdd={addToCart} />}
+        {popup && (
+          <ItemSheet item={popup} onClose={() => setPopup(null)} onAdd={addToCart} />
+        )}
       </div>
     </div>
   )

@@ -72,6 +72,7 @@ interface CafeStore {
   upsertTable: (table: CafeTable) => void
   removeTable: (tableId: string) => void
   upsertIngredient: (ingredient: Ingredient) => void
+  removeIngredient: (ingredientId: string) => void
   recordStock: (ingredientId: string, type: StockMovement['type'], quantity: number, notes: string) => void
   updateBusiness: (patch: Partial<Business>) => void
   upsertStaff: (user: StaffUser) => void
@@ -118,37 +119,42 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
     const tax = TAX_PER_TRANSACTION
     const total = subtotal + tax
-    const n = 9023 + orders.length
-    const order: Order = {
-      id: uid('ord'),
-      orderNumber: `BB-${n}`,
-      clientOrderId: uid('cli'),
-      tableId,
-      tableNumber,
-      customerName: customerName || 'Tamu',
-      source,
-      status: 'diterima',
-      paymentMethod,
-      paymentStatus: paymentMethod === 'cash' || offline ? 'pending' : paymentMethod === 'qris' ? 'pending' : 'paid',
-      subtotal,
-      tax,
-      total,
-      createdAt: new Date().toISOString(),
-      syncStatus: offline || connection === 'offline' ? 'pending' : 'synced',
-      items: items.map((i) => ({
-        id: uid('item'),
-        productId: i.productId,
-        productName: i.name,
-        price: i.price,
-        quantity: i.quantity,
-        options: i.options,
-        optionsLabel: i.optionsLabel,
-        subtotal: i.price * i.quantity,
-      })),
-    }
-    setOrders((prev) => [order, ...prev])
-    return order
-  }, [orders.length, connection])
+    // Gunakan functional update agar tidak stale terhadap orders.length
+    let created: Order | null = null
+    setOrders((prev) => {
+      const n = 9023 + prev.length
+      const order: Order = {
+        id: uid('ord'),
+        orderNumber: `BB-${n}`,
+        clientOrderId: uid('cli'),
+        tableId,
+        tableNumber,
+        customerName: customerName || 'Tamu',
+        source,
+        status: 'diterima',
+        paymentMethod,
+        paymentStatus: paymentMethod === 'cash' || offline ? 'pending' : paymentMethod === 'qris' ? 'pending' : 'paid',
+        subtotal,
+        tax,
+        total,
+        createdAt: new Date().toISOString(),
+        syncStatus: offline || connection === 'offline' ? 'pending' : 'synced',
+        items: items.map((i) => ({
+          id: uid('item'),
+          productId: i.productId,
+          productName: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          options: i.options,
+          optionsLabel: i.optionsLabel,
+          subtotal: i.price * i.quantity,
+        })),
+      }
+      created = order
+      return [order, ...prev]
+    })
+    return created!
+  }, [connection])
 
   const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
@@ -216,29 +222,42 @@ export function CafeProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const removeIngredient = useCallback((ingredientId: string) => {
+    setIngredients((prev) => prev.filter((i) => i.id !== ingredientId))
+  }, [])
+
   const recordStock = useCallback((ingredientId: string, type: StockMovement['type'], quantity: number, notes: string) => {
+    // Hindari nested setState: hitung movement dari snapshot ingredients, lalu update dua state terpisah.
+    let movement: StockMovement | null = null
+    let afterStock = 0
+    let beforeStock = 0
+    let found = false
     setIngredients((prev) => {
       const item = prev.find((i) => i.id === ingredientId)
       if (!item) return prev
-      const delta = type === 'in' ? quantity : -quantity
-      const after = Math.max(0, item.currentStock + delta)
-      const movement: StockMovement = {
+      found = true
+      beforeStock = item.currentStock
+      const normalizedDelta = type === 'in' ? quantity : -quantity
+      afterStock = Math.max(0, item.currentStock + normalizedDelta)
+      movement = {
         id: uid('mv'),
         ingredientId,
         type,
         quantity,
-        stockBefore: item.currentStock,
-        stockAfter: after,
+        stockBefore: beforeStock,
+        stockAfter: afterStock,
         notes,
         createdAt: new Date().toISOString(),
       }
-      setMovements((m) => [movement, ...m])
       return prev.map((i) =>
         i.id === ingredientId
-          ? { ...i, currentStock: after, isAvailable: after > 0 && i.isAvailable }
+          ? { ...i, currentStock: afterStock, isAvailable: afterStock > 0 && i.isAvailable }
           : i,
       )
     })
+    if (found && movement) {
+      setMovements((m) => [movement as StockMovement, ...m])
+    }
   }, [])
 
   const updateBusiness = useCallback((patch: Partial<Business>) => {
@@ -293,6 +312,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       upsertTable,
       removeTable,
       upsertIngredient,
+      removeIngredient,
       recordStock,
       updateBusiness,
       upsertStaff,
@@ -325,9 +345,11 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       upsertTable,
       removeTable,
       upsertIngredient,
+      removeIngredient,
       recordStock,
       updateBusiness,
       upsertStaff,
+      removeStaff,
       syncNow,
     ],
   )

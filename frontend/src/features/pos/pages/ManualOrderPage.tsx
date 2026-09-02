@@ -37,11 +37,13 @@ export function ManualOrderPage() {
   })
 
   // Hitung total harga item beserta harga varian/add-ons
+  // Mendukung dua bentuk options: ItemSheet menyimpan addon sebagai { [name]: true },
+  // Manual menyimpan { [type]: name }. Cek keduanya agar tidak undercharge.
   function calculateItemPrice(p: Product, options: Record<string, string>) {
     let optionTotal = 0
     if (p.options) {
       p.options.forEach((opt) => {
-        if (options[opt.type] === opt.name && opt.price) {
+        if (options[opt.type] === opt.name || (options as Record<string, unknown>)[opt.name] === true) {
           optionTotal += opt.price
         }
       })

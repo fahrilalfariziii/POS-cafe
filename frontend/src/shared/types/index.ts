@@ -30,6 +30,7 @@ export interface CafeTable {
   tableNumber: string
   qrToken: string
   isActive: boolean
+  area?: string
 }
 
 export interface Category {

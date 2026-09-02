@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCafe } from '../../../../mock/store'
 import { Button, Field, TextInput } from '../../../../shared/components/ui'
 
@@ -16,6 +16,17 @@ export function CafeSettingsPage() {
 
   // State Notifikasi Berhasil Simpan
   const [isSaved, setIsSaved] = useState(false)
+
+  // Sinkronkan form jika business berubah dari luar (mis. update dari tab lain)
+  useEffect(() => {
+    setCafeForm({
+      name: business.name || '',
+      tagline: business.tagline || '',
+      address: business.address || '',
+      phone: business.phone || '',
+      email: business.email || '',
+    })
+  }, [business])
 
   function handleSaveCafeProfile(e: React.FormEvent) {
     e.preventDefault()

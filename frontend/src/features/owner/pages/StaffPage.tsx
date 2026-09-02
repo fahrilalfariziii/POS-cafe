@@ -13,7 +13,7 @@ export function StaffPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'kasir' as UserRole | 'manager' | 'kitchen',
+    role: 'kasir' as UserRole,
   })
 
   // State Modal Konfirmasi Toggle Status Aktif / Nonaktif
@@ -193,15 +193,13 @@ export function StaffPage() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as UserRole | 'manager' | 'kitchen',
+                      role: e.target.value as UserRole,
                     })
                   }
                   className="h-10 w-full rounded-lg border border-clay bg-white px-3 text-sm font-semibold outline-none focus:border-black"
                 >
-                  <option value="manager">Manager</option>
                   <option value="kasir">Kasir</option>
                   <option value="barista">Barista</option>
-                  <option value="kitchen">Kitchen</option>
                   <option value="owner">Owner</option>
                 </select>
               </Field>

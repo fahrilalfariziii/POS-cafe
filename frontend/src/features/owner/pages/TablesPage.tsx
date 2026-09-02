@@ -4,12 +4,10 @@ import { uid } from '../../../shared/lib/format'
 import { Button, Field, TextInput } from '../../../shared/components/ui'
 import type { CafeTable } from '../../../shared/types'
 
-// Tipe ekstensi lokal untuk lokasi meja
+// Tipe ekstensi lokal untuk lokasi meja — selaras dengan CafeTable.area?: string di shared/types
 type TableArea = 'Indoor' | 'Outdoor' | 'Lantai Atas' | 'Lantai Bawah'
 
-interface TableWithArea extends CafeTable {
-  area?: TableArea
-}
+type TableWithArea = CafeTable & { area?: TableArea }
 
 export function TablesPage() {
   const { tables, business, upsertTable, removeTable } = useCafe()
@@ -20,10 +18,10 @@ export function TablesPage() {
   const [areaInput, setAreaInput] = useState<TableArea>('Indoor')
 
   // State Modal Konfirmasi Toggle Status
-  const [toggleTarget, setToggleTarget] = useState<TableWithArea | null>(null)
+  const [toggleTarget, setToggleTarget] = useState<CafeTable | null>(null)
 
   // State Modal Preview & Print QR Code
-  const [selectedQRTable, setSelectedQRTable] = useState<TableWithArea | null>(null)
+  const [selectedQRTable, setSelectedQRTable] = useState<CafeTable | null>(null)
 
   // State Modal Konfirmasi Hapus
   const [deletingTable, setDeletingTable] = useState<CafeTable | null>(null)
@@ -129,7 +127,7 @@ export function TablesPage() {
 
       {/* Grid Kartu Meja */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        {tables.map((t: TableWithArea) => (
+        {tables.map((t) => (
           <article
             key={t.id}
             className="flex flex-col justify-between rounded-[16px] border border-[#c4c7c7] bg-white p-5 shadow-2xs transition-all hover:shadow-md"

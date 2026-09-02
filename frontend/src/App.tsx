@@ -86,6 +86,21 @@ export default function App() {
               <Route path="cafe" element={<CafeSettingsPage />} />
             </Route>
           </Route>
+          {/* 404 fallback — tidak mengganggu program, hanya tangani URL tidak dikenal */}
+          <Route
+            path="*"
+            element={
+              <div className="flex min-h-screen items-center justify-center bg-paper px-6 text-center">
+                <div>
+                  <h1 className="font-display text-3xl font-bold">Halaman Tidak Ditemukan</h1>
+                  <p className="mt-2 text-stone">URL tidak dikenal. Silakan kembali ke beranda.</p>
+                  <a href={import.meta.env.BASE_URL} className="mt-4 inline-block rounded-full bg-black px-6 py-2 text-sm font-semibold text-white">
+                    Kembali ke Beranda
+                  </a>
+                </div>
+              </div>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </CafeProvider>
