@@ -15,7 +15,7 @@ import {
   seedProducts,
   seedStaff,
   seedTables,
-  TAX_RATE,
+  TAX_PER_TRANSACTION,
 } from './data'
 import { uid } from '../shared/lib/format'
 import type {
@@ -111,7 +111,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
 
   const placeOrder = useCallback<CafeStore['placeOrder']>(({ items, customerName, tableId, tableNumber, paymentMethod, source, offline }) => {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-    const tax = Math.round(subtotal * TAX_RATE)
+    const tax = TAX_PER_TRANSACTION
     const total = subtotal + tax
     const n = 9023 + orders.length
     const order: Order = {

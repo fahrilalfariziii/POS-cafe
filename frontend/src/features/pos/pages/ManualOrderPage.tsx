@@ -4,7 +4,7 @@ import { useCafe } from '../../../mock/store'
 import type { CartItem, PaymentMethod, Product } from '../../../shared/types'
 import { formatRupiah } from '../../../shared/lib/format'
 import { Button } from '../../../shared/components/ui'
-import { TAX_RATE } from '../../../mock/data'
+import { TAX_PER_TRANSACTION } from '../../../mock/data'
 
 export function ManualOrderPage() {
   const { products, categories, tables, placeOrder, connection } = useCafe()
@@ -20,7 +20,8 @@ export function ManualOrderPage() {
     return p.isAvailable && (cat === 'All' || n === cat)
   })
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-  const tax = Math.round(subtotal * TAX_RATE)
+  // const tax = Math.round(subtotal * TAX_RATE)
+  const tax = cart.length > 0 ? TAX_PER_TRANSACTION : 0
   const total = subtotal + tax
   const offline = connection === 'offline'
 

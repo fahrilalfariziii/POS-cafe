@@ -23,7 +23,7 @@ export const IMG = {
   icedCaramelLatte:
     'https://images.unsplash.com/photo-1662047102608-a6f2e492411f?crop=entropy&cs=tinysrgb&fit=crop&w=400&h=400&q=80',
   flatWhite:
-    'https://images.unsplash.com/photo-1577968897966-3d32d8b2d1e4?crop=entropy&cs=tinysrgb&fit=crop&w=400&h=400&q=80',
+    'https://images.unsplash.com/photo-1732030564789-bb6f12144091?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
   almondCroissant:
     'https://images.unsplash.com/photo-1623334044303-241021148842?crop=entropy&cs=tinysrgb&fit=crop&w=400&h=400&q=80',
 }
@@ -285,4 +285,4 @@ export const seedOrders: Order[] = [
   },
 ]
 
-export const TAX_RATE = 0.1
+export const TAX_PER_TRANSACTION = 2000

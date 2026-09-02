@@ -47,21 +47,27 @@ export function StatusScreen({ order, cart, tableNumber, onOrderAgain }: Props) 
               : 'Barista kami sedang meracik pesanan Anda dengan penuh perhatian.'}
           </p>
         </div>
-        <div className="mb-10 flex items-center justify-between">
+        <div className="mb-10 flex w-full items-center justify-between px-2">
           {STEPS.map((step, i) => (
-            <div key={step.id} className="flex flex-1 items-center">
+            <div key={step.id} className="flex flex-1 items-center last:flex-none">
+              {/* Lingkaran dan Label Status */}
               <div className="flex flex-col items-center gap-2">
-                <div
-                  className={`flex size-10 items-center justify-center rounded-full text-xs font-bold ${
+                <div className={`flex size-10 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                     i <= idx ? 'bg-ink text-white' : 'bg-[#e2e2e2] text-[#80756c]'
-                  }`}
-                >
+                  }`}>
                   {i < idx ? '✓' : i + 1}
                 </div>
-                <span className={`text-xs ${i <= idx ? 'font-bold text-ink' : 'text-[#80756c]'}`}>{step.label}</span>
+                <span className={`text-xs whitespace-nowrap ${
+                    i <= idx ? 'font-bold text-ink' : 'text-[#80756c]'
+                  }`}> {step.label}
+                </span>
               </div>
+
+              {/* Garis Penghubung (Hanya muncul di antara langkah, bukan setelah langkah terakhir) */}
               {i < STEPS.length - 1 && (
-                <div className={`mx-2 mb-5 h-1 flex-1 ${i < idx ? 'bg-ink' : 'bg-clay'}`} />
+                <div className={`mx-3 -mt-6 h-1 flex-1 rounded-full transition-colors ${
+                    i < idx ? 'bg-ink' : 'bg-clay/40'
+                  }`}/>
               )}
             </div>
           ))}
@@ -87,29 +93,30 @@ export function StatusScreen({ order, cart, tableNumber, onOrderAgain }: Props) 
               </div>
             ))}
           </div>
-          <div className="flex justify-between border-t border-[#e2e2e2] pt-2">
-            <span className="font-bold">Total Bayar</span>
-            <span className="font-display text-xl">{formatRupiah(total)}</span>
+          <div className="flex flex-col gap-2 border-t border-[#e2e2e2] pt-3">
+            <div className="flex items-center justify-between text-sage">
+              <span className="font-bold text-ink">Pajak</span>
+              <span className="font-display text-l font-bold text-sage">
+                {formatRupiah(order?.tax ?? 0)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-ink">Total Harga</span>
+              <span className="font-display text-l font-bold text-sage">
+                {formatRupiah(total)}
+              </span>
+            </div>
           </div>
         </div>
         {order?.paymentMethod === 'cash' && order.paymentStatus !== 'paid' && (
-          <p className="mt-4 rounded-[12px] bg-sand p-4 text-sm">Pembayaran tunai belum dicatat kasir. Silakan bayar di counter.</p>
+          <p className="mt-4 rounded-[12px] bg-sand p-4 text-sm">Segera Bayar dikasir, agar pesanan segera diproses.</p>
         )}
         <div className="mt-8 flex flex-col gap-2">
           <Button className="h-12 w-full rounded-full" onClick={onOrderAgain}>
             Pesan Lagi
           </Button>
-          <Button variant="outline" className="h-12 w-full rounded-full">
-            Butuh Bantuan?
-          </Button>
         </div>
       </div>
-      <nav className="absolute bottom-0 flex h-20 w-full items-center justify-around border-t border-clay/20 bg-[#eee]">
-        <button onClick={onOrderAgain} className="text-xs text-soil">
-          Menu
-        </button>
-        <span className="rounded-[18px] bg-mint px-3 py-1 text-xs font-bold">Pesanan</span>
-      </nav>
     </div>
   )
 }

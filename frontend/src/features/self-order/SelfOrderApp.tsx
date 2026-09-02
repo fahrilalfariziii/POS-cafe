@@ -7,6 +7,7 @@ import { MenuScreen } from './screens/MenuScreen'
 import { PaymentScreen } from './screens/PaymentScreen'
 import { StatusScreen } from './screens/StatusScreen'
 import { ItemSheet } from './components/ItemSheet'
+import { BottomNav } from './components/BottomNav'
 
 type Screen = 'menu' | 'cart' | 'payment' | 'status'
 
@@ -57,9 +58,21 @@ export function SelfOrderApp() {
       paymentMethod: payMethod,
       source: 'self_order',
     })
+    
     setActiveOrderId(order.id)
+    setCart([]) // Kosongkan keranjang setelah checkout berhasil
+
     if (payMethod === 'qris') setScreen('payment')
     else setScreen('status')
+  }
+
+  // Helper navigasi untuk tab Pesanan di seluruh layar
+  const handleGoOrderTab = () => {
+    if (activeOrder) {
+      setScreen('status')
+    } else {
+      setScreen('cart')
+    }
   }
 
   if (!table) {
@@ -71,9 +84,9 @@ export function SelfOrderApp() {
   }
 
   return (
-    <div className="flex min-h-full items-start justify-center bg-[#d0ccc8] sm:py-8">
-      <div className="relative w-[390px] max-w-full overflow-hidden bg-paper" style={{ minHeight: '100vh' }}>
-        <div className="absolute inset-0">
+    <div className="flex min-h-screen w-full justify-center bg-paper sm:bg-[#d0ccc8] sm:py-6">
+      <div className="relative flex h-full min-h-screen w-full max-w-md flex-col overflow-hidden bg-paper shadow-2xl sm:min-h-[844px] sm:rounded-[24px]">
+        <main className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
           {screen === 'menu' && (
             <MenuScreen
               tableNumber={table.tableNumber}
@@ -82,7 +95,7 @@ export function SelfOrderApp() {
               onSelectItem={setPopup}
               onUpdateQty={updateQty}
               onGoCart={() => setScreen('cart')}
-              onGoOrder={() => setScreen(activeOrder ? 'status' : 'cart')}
+              onGoOrder={handleGoOrderTab}
             />
           )}
           {screen === 'cart' && (
@@ -101,7 +114,7 @@ export function SelfOrderApp() {
           {screen === 'payment' && activeOrder && (
             <PaymentScreen
               order={activeOrder}
-              onBack={() => setScreen('cart')}
+              onBack={() => setScreen('menu')}
               onConfirm={() => setScreen('status')}
             />
           )}
@@ -111,16 +124,21 @@ export function SelfOrderApp() {
               cart={cart}
               tableNumber={table.tableNumber}
               onOrderAgain={() => {
-                setCart([])
-                setActiveOrderId(null)
                 setScreen('menu')
               }}
             />
           )}
-        </div>
+        </main>
         {popup && (
           <ItemSheet item={popup} onClose={() => setPopup(null)} onAdd={addToCart} />
         )}
+        <BottomNav
+              currentScreen={screen}
+              hasActiveOrder={Boolean(activeOrder)}
+              onNavigate={(targetScreen) => setScreen(targetScreen)}
+              />
+
+          {popup && <ItemSheet item={popup} onClose={() => setPopup(null)} onAdd={addToCart} />}
       </div>
     </div>
   )

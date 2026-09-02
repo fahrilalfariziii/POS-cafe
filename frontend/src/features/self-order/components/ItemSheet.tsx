@@ -78,9 +78,11 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-end bg-black/70" onClick={onClose}>
+    /* Overlay Fixed yang menutupi layar & terpusat secara horizontal */
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
+      {/* Kontainer Sheet yang dibatasi max-w-md agar presisi di layar besar */}
       <div
-        className="flex max-h-[92%] w-full flex-col overflow-hidden rounded-t-[12px] bg-paper"
+        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-[20px] bg-paper shadow-2xl transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-clay/20 px-5 py-4">
@@ -88,10 +90,11 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
             <p className="font-display text-[20px] font-semibold text-ink">{item.name}</p>
             <p className="text-sm font-semibold text-soil">{formatRupiah(item.price)}</p>
           </div>
-          <button className="size-10 text-2xl leading-none text-soil" onClick={onClose} aria-label="Tutup">
+          <button className="flex size-10 items-center justify-center text-2xl leading-none text-soil" onClick={onClose} aria-label="Tutup">
             ×
           </button>
         </div>
+
         <div className="overflow-y-auto px-5 py-5 scrollbar-hide">
           <div className="flex flex-col gap-6">
             {groups.map((g) =>
@@ -153,15 +156,16 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
             )}
           </div>
         </div>
-        <div className="border-t border-clay/20 px-5 py-5">
+
+        <div className="border-t border-clay/20 px-5 py-5 bg-paper">
           <div className="mb-4 flex items-center justify-between">
             <p className="font-display text-[20px] font-semibold">Total: {formatRupiah(unitPrice * qty)}</p>
             <div className="flex h-10 items-center rounded-full border border-clay/30 bg-[#eee]">
-              <button className="w-12" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+              <button className="flex h-full w-10 items-center justify-center" onClick={() => setQty((q) => Math.max(1, q - 1))}>
                 –
               </button>
-              <span className="w-8 border-x border-[#bcbcbc]/70 text-center font-bold">{qty}</span>
-              <button className="w-10" onClick={() => setQty((q) => q + 1)}>
+              <span className="flex h-full w-8 items-center justify-center border-x border-[#bcbcbc]/70 text-center font-bold">{qty}</span>
+              <button className="flex h-full w-10 items-center justify-center" onClick={() => setQty((q) => q + 1)}>
                 <IconPlus color="#4E453D" />
               </button>
             </div>
