@@ -10,11 +10,18 @@ export function StaffPage() {
   // State Modal Form (Tambah / Edit)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingStaff, setEditingStaff] = useState<StaffUser | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [formError, setFormError] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: 'kasir' as UserRole,
+    password: '',
   })
+
+  function isStrongPassword(p: string) {
+    return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(p)
+  }
 
   // State Modal Konfirmasi Toggle Status Aktif / Nonaktif
   const [toggleStaff, setToggleStaff] = useState<StaffUser | null>(null)
@@ -22,7 +29,9 @@ export function StaffPage() {
 
   function handleOpenAddModal() {
     setEditingStaff(null)
-    setFormData({ name: '', email: '', role: 'kasir' })
+    setFormData({ name: '', email: '', role: 'kasir', password: '' })
+    setShowPassword(false)
+    setFormError('')
     setIsFormOpen(true)
   }
 
@@ -32,12 +41,22 @@ export function StaffPage() {
       name: user.name,
       email: user.email,
       role: user.role,
+      password: user.password || '',
     })
+    setShowPassword(false)
+    setFormError('')
     setIsFormOpen(true)
   }
 
   function handleSaveStaff() {
-    if (!formData.name.trim() || !formData.email.trim()) return
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setFormError('Nama dan email wajib diisi.')
+      return
+    }
+    if (!formData.password || !isStrongPassword(formData.password)) {
+      setFormError('Password wajib min 6 karakter, harus ada huruf, angka, dan simbol (!@#$ etc).')
+      return
+    }
 
     const staffData: StaffUser = {
       id: editingStaff?.id || uid('u'),
@@ -45,10 +64,12 @@ export function StaffPage() {
       email: formData.email.trim(),
       role: formData.role as UserRole,
       active: editingStaff ? editingStaff.active : true,
+      password: formData.password,
     }
 
     upsertStaff(staffData)
     setIsFormOpen(false)
+    setFormError('')
   }
 
   function handleConfirmToggleActive() {
@@ -203,6 +224,34 @@ export function StaffPage() {
                   <option value="owner">Owner</option>
                 </select>
               </Field>
+
+              <Field label="Password">
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Min 6: huruf, angka, simbol (contoh: Kasir123!)"
+                    className="h-10 w-full rounded-lg border border-clay bg-white px-3 pr-10 text-sm outline-none focus:border-black"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-stone hover:bg-sand hover:text-black"
+                    title={showPassword ? 'Sembunyikan' : 'Tampilkan'}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-stone">Wajib 6 karakter, kombinasi huruf + angka + simbol.</p>
+              </Field>
+
+              {formError && (
+                <div className="rounded-lg border border-[#ba1a1a]/30 bg-[#ba1a1a]/10 px-3 py-2 text-xs font-medium text-[#ba1a1a]">
+                  {formError}
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2 border-t border-sand pt-4">
@@ -211,7 +260,7 @@ export function StaffPage() {
               </Button>
               <Button
                 className="flex-1"
-                disabled={!formData.name.trim() || !formData.email.trim()}
+                disabled={!formData.name.trim() || !formData.email.trim() || !formData.password}
                 onClick={handleSaveStaff}
               >
                 Simpan

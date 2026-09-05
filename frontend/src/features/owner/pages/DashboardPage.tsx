@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useCafe } from '../../../mock/store'
 import { formatRupiah } from '../../../shared/lib/format'
 
-const DAYS = [8.2, 9.1, 7.4, 11.2, 10.5, 12.4, 11.8]
+const FALLBACK_DAYS = [8.2, 9.1, 7.4, 11.2, 10.5, 12.4, 11.8]
 
 export function DashboardPage() {
   const { orders, products } = useCafe()
@@ -16,7 +16,19 @@ export function DashboardPage() {
   }
   const best = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
   const oos = products.filter((p) => !p.isAvailable)
-  const max = Math.max(...DAYS)
+
+  const chart = useMemo(() => {
+    if (paid.length === 0) return FALLBACK_DAYS.map((v, i) => ({ label: `H${i + 1}`, value: v }))
+    // mock agregasi by period dari paid (hour/day/week) — pakai total per bucket mock + revenue real sebagai scale
+    const total = paid.reduce((s, o) => s + o.total, 0)
+    const scale = total > 0 ? total / FALLBACK_DAYS.reduce((a, b) => a + b, 0) / 1000 : 1
+    const base = period === 'daily' ? FALLBACK_DAYS : period === 'weekly' ? [3.2, 3.8, 3.5, 4.1, 5.8, 7.2, 6.9] : [18.5, 22.1, 19.8, 25.4]
+    return base.map((v, i) => ({
+      label: period === 'daily' ? `${8 + i * 2}:00` : period === 'weekly' ? ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][i] : `M${i + 1}`,
+      value: v * scale,
+    }))
+  }, [paid, period])
+  const max = Math.max(...chart.map((c) => c.value), 1)
 
   return (
     <div>
@@ -61,13 +73,15 @@ export function DashboardPage() {
             <span className="text-[12px] font-semibold uppercase tracking-wider text-muted">Export</span>
           </div>
           <div className="flex h-64 items-end gap-3 border-b border-sand px-2">
-            {DAYS.map((v, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center justify-end">
-                <div className="w-full rounded-t-sm bg-[#b8cda9]" style={{ height: `${(v / max) * 100}%` }} />
-                <span className="mt-2 text-[10px] text-muted">H{i + 1}</span>
+            {chart.map((c, i) => (
+              <div key={i} className="group relative flex flex-1 flex-col items-center justify-end">
+                <div className="absolute -top-6 hidden rounded bg-black px-2 py-1 text-[10px] font-bold text-white group-hover:block">{formatRupiah(Math.round(c.value * 1000))}</div>
+                <div className="w-full rounded-t-sm bg-[#b8cda9] group-hover:bg-black transition-colors" style={{ height: `${(c.value / max) * 100}%` }} />
+                <span className="mt-2 text-[10px] text-muted">{c.label}</span>
               </div>
             ))}
           </div>
+          {paid.length === 0 && <p className="mt-2 text-center text-xs text-muted">Belum ada transaksi — menampilkan data contoh.</p>}
         </section>
         <div className="col-span-4 flex flex-col gap-6">
           <section className="rounded-[4px] bg-cream p-5 ring-1 ring-[#e4e2dd]">

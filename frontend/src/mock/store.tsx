@@ -15,7 +15,6 @@ import {
   seedProducts,
   seedStaff,
   seedTables,
-  TAX_PER_TRANSACTION,
 } from './data'
 import { uid } from '../shared/lib/format'
 import type {
@@ -32,7 +31,6 @@ import type {
   Product,
   StaffUser,
   StockMovement,
-  UserRole,
 } from '../shared/types'
 
 interface Session {
@@ -51,7 +49,7 @@ interface CafeStore {
   session: Session | null
   connection: ConnectionStatus
   pendingSyncCount: number
-  login: (email: string, roleHint?: UserRole) => boolean
+  login: (email: string, password: string) => StaffUser | null
   logout: () => void
   placeOrder: (payload: {
     items: CartItem[]
@@ -97,28 +95,23 @@ export function CafeProvider({ children }: { children: ReactNode }) {
 
   const pendingSyncCount = orders.filter((o) => o.syncStatus !== 'synced').length
 
-  const login = useCallback((email: string, roleHint?: UserRole) => {
-    const found = staff.find((s) => s.email.toLowerCase() === email.toLowerCase() && s.active)
-    if (found) {
-      setSession({ user: found })
-      return true
-    }
-    if (roleHint) {
-      const byRole = staff.find((s) => s.role === roleHint && s.active)
-      if (byRole) {
-        setSession({ user: byRole })
-        return true
-      }
-    }
-    return false
+  const login = useCallback((email: string, password: string): StaffUser | null => {
+    const found = staff.find((s) => s.email.toLowerCase() === email.toLowerCase())
+    if (!found || !found.active) return null
+    if (found.password !== password) return null
+    setSession({ user: found })
+    return found
   }, [staff])
 
   const logout = useCallback(() => setSession(null), [])
 
   const placeOrder = useCallback<CafeStore['placeOrder']>(({ items, customerName, tableId, tableNumber, paymentMethod, source, offline }) => {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-    const tax = TAX_PER_TRANSACTION
-    const total = subtotal + tax
+    const serviceCharge = business.serviceChargeEnabled ? Math.round(subtotal * (business.serviceChargeRate / 100)) : 0
+    const taxBase = subtotal + serviceCharge
+    const rawTax = business.taxEnabled ? Math.round(taxBase * (business.taxRate / 100)) : 0
+    const tax = rawTax
+    const total = business.taxEnabled && business.taxBearer === 'cafe' ? subtotal + serviceCharge : subtotal + serviceCharge + tax
     // Gunakan functional update agar tidak stale terhadap orders.length
     let created: Order | null = null
     setOrders((prev) => {
@@ -135,7 +128,10 @@ export function CafeProvider({ children }: { children: ReactNode }) {
         paymentMethod,
         paymentStatus: paymentMethod === 'cash' || offline ? 'pending' : paymentMethod === 'qris' ? 'pending' : 'paid',
         subtotal,
+        serviceCharge,
         tax,
+        taxLabel: business.taxLabel,
+        taxBearer: business.taxBearer,
         total,
         createdAt: new Date().toISOString(),
         syncStatus: offline || connection === 'offline' ? 'pending' : 'synced',
@@ -154,7 +150,7 @@ export function CafeProvider({ children }: { children: ReactNode }) {
       return [order, ...prev]
     })
     return created!
-  }, [connection])
+  }, [connection, business.taxEnabled, business.taxRate, business.taxLabel, business.taxBearer, business.serviceChargeEnabled, business.serviceChargeRate])
 
   const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))

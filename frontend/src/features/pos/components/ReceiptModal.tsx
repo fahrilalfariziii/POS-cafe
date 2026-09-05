@@ -88,13 +88,21 @@ export function ReceiptModal({ order, onClose }: Props) {
               <span>Subtotal</span>
               <span>{formatRupiah(order.subtotal)}</span>
             </div>
+            {order.serviceCharge > 0 && (
+              <div className="flex justify-between">
+                <span>Service</span>
+                <span>{formatRupiah(order.serviceCharge)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span>Pajak (PB1)</span>
+              <span>
+                Pajak ({order.taxLabel}){order.taxBearer === 'cafe' ? ' (ditanggung kafe)' : ''}
+              </span>
               <span>{formatRupiah(order.tax)}</span>
             </div>
             <div className="my-1 border-b border-dotted border-black/30" />
             <div className="flex justify-between text-xs font-bold">
-              <span>TOTAL</span>
+              <span>TOTAL{order.taxBearer === 'cafe' ? ' (tanpa pajak)' : ''}</span>
               <span>{formatRupiah(order.total)}</span>
             </div>
             <div className="flex justify-between pt-1 text-[10px] uppercase text-stone">

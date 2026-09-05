@@ -1,6 +1,8 @@
 # Node dependencies
 node_modules/
 
+docs/
+
 # Build outputs
 frontend/dist/
 frontend/build/

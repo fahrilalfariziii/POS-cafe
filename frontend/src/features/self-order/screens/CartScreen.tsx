@@ -3,7 +3,7 @@ import type { CartItem, PaymentMethod } from "../../../shared/types";
 import { formatRupiah } from "../../../shared/lib/format";
 import { Button } from "../../../shared/components/ui";
 import {IconBack, IconMinus, IconPlus,} from "../../../shared/components/icons";
-import { TAX_PER_TRANSACTION } from "../../../mock/data";
+import { useCafe } from "../../../mock/store";
 
 interface Props {
   tableNumber: string;
@@ -35,10 +35,13 @@ export function CartScreen({
   onUpdateQty,
   onCheckout,
 }: Props) {
+  const { business } = useCafe()
   const [error, setError] = useState(false);
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const tax = cart.length > 0 ? TAX_PER_TRANSACTION : 0
-  const total = subtotal + tax;
+  const serviceCharge = cart.length > 0 && business.serviceChargeEnabled ? Math.round(subtotal * (business.serviceChargeRate / 100)) : 0
+  const taxBase = subtotal + serviceCharge
+  const tax = cart.length > 0 && business.taxEnabled ? Math.round(taxBase * (business.taxRate / 100)) : 0
+  const total = business.taxEnabled && business.taxBearer === 'cafe' ? subtotal + serviceCharge : subtotal + serviceCharge + tax
   const handleCheckout = () => {
     // Validasi: Cek jika nama kosong atau hanya berisi spasi
     if (!customerName.trim()) {
@@ -201,10 +204,21 @@ export function CartScreen({
               <span>Subtotal ({cart.reduce((acc, ci) => acc + ci.quantity, 0)} item)</span>
               <span className="text-ink">{formatRupiah(subtotal)}</span>
             </div>
-            <div className="flex justify-between py-1 text-soil">
-              <span>Biaya Admin</span>
-              <span className="text-ink">{formatRupiah(tax)}</span>
-            </div>
+            {serviceCharge > 0 && (
+              <div className="flex justify-between py-1 text-soil">
+                <span>Service {business.serviceChargeRate}%</span>
+                <span className="text-ink">{formatRupiah(serviceCharge)}</span>
+              </div>
+            )}
+            {business.taxEnabled && tax > 0 && (
+              <div className="flex justify-between py-1 text-soil">
+                <span>
+                  {business.taxLabel} {business.taxRate}% {business.taxBearer === 'cafe' ? '(ditanggung kafe)' : ''}
+                </span>
+                <span className="text-ink">{formatRupiah(tax)}</span>
+              </div>
+            )}
+            {!business.taxEnabled && <div className="flex justify-between py-1 text-soil"><span>Pajak</span><span className="text-ink">Rp0 (nonaktif)</span></div>}
             <div className="my-2 h-px bg-clay/50" />
             <div className="flex justify-between py-2">
               <span className="font-display text-2xl font-bold">Total</span>

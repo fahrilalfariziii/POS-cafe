@@ -11,7 +11,7 @@ interface MenuItem {
 
 const NAV_ITEMS: MenuItem[] = [
   {
-    to: '/owner/dashboard',
+    to: '/backoffice/dashboard',
     label: 'Dashboard',
     icon: 'dashboard',
   },
@@ -19,27 +19,27 @@ const NAV_ITEMS: MenuItem[] = [
     label: 'Sales',
     icon: 'payments',
     children: [
-      { to: '/owner/sales/omset', label: 'Omset' },
-      { to: '/owner/sales/performa', label: 'Performa Menu' },
-      { to: '/owner/sales/riwayat', label: 'Riwayat Transaksi' },
+      { to: '/backoffice/sales/omset', label: 'Omset' },
+      { to: '/backoffice/sales/performa', label: 'Performa Item' },
+      { to: '/backoffice/sales/riwayat', label: 'Riwayat Transaksi' },
     ],
   },
   {
     label: 'Menu',
     icon: 'restaurant_menu',
     children: [
-      { to: '/owner/menu/catalog', label: 'Menu Catalog' },
-      { to: '/owner/menu/categories', label: 'Kategori Menu' },
-      { to: '/owner/menu/variants', label: 'Varian & Addons' },
+      { to: '/backoffice/menu/catalog', label: 'Menu Catalog' },
+      { to: '/backoffice/menu/categories', label: 'Kategori Menu' },
+      { to: '/backoffice/menu/variants', label: 'Varian & Addons' },
     ],
   },
   {
-    to: '/owner/tables',
+    to: '/backoffice/tables',
     label: 'Tables',
     icon: 'table_restaurant',
   },
   {
-    to: '/owner/staff',
+    to: '/backoffice/staff',
     label: 'Staff',
     icon: 'people',
   },
@@ -47,8 +47,9 @@ const NAV_ITEMS: MenuItem[] = [
     label: 'Settings',
     icon: 'settings',
     children: [
-      { to: '/owner/settings/profile', label: 'Profile Akun' },
-      { to: '/owner/settings/cafe', label: 'Profile Kafe' },
+      { to: '/backoffice/settings/profile', label: 'Profile Akun' },
+      { to: '/backoffice/settings/business', label: 'Profile Bisnis' },
+      { to: '/backoffice/settings/tax', label: 'Pajak & Biaya' },
     ],
   },
 ]
@@ -76,11 +77,14 @@ export function OwnerSidebar() {
         <div className="mb-6 border-b border-sand pb-4">
           {!isCollapsed ? (
             <div className="flex items-center justify-between gap-2">
-              <div className="overflow-hidden">
-                <h2 className="font-display text-lg font-bold text-black truncate">
-                  {business.name}
-                </h2>
-                <p className="text-xs text-stone">Owner Portal</p>
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                {business.logoUrl ? (
+                  <img src={business.logoUrl} alt="Logo" className="size-9 shrink-0 rounded-lg border border-sand object-cover" />
+                ) : null}
+                <div className="overflow-hidden">
+                  <h2 className="font-display text-lg font-bold text-black truncate">{business.name}</h2>
+                  <p className="text-xs text-stone">Back Office</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -94,16 +98,17 @@ export function OwnerSidebar() {
               </button>
             </div>
           ) : (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
+              {business.logoUrl ? (
+                <img src={business.logoUrl} alt="Logo" className="size-10 rounded-lg border border-sand object-cover" />
+              ) : null}
               <button
                 type="button"
                 onClick={() => setIsCollapsed(false)}
                 className="flex size-10 items-center justify-center rounded-lg border border-clay/60 bg-white text-stone hover:border-black hover:text-black transition-colors"
                 title="Buka Panel"
               >
-                <span className="material-symbols-outlined text-[22px]">
-                  dock_to_right
-                </span>
+                <span className="material-symbols-outlined text-[22px]">dock_to_right</span>
               </button>
             </div>
           )}

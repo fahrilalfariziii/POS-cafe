@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useCafe } from '../../../mock/store'
 import { uid } from '../../../shared/lib/format'
 import { Button, Field, TextInput } from '../../../shared/components/ui'
-import type { CafeTable } from '../../../shared/types'
+import type { CafeTable, QrConfig } from '../../../shared/types'
 
 // Tipe ekstensi lokal untuk lokasi meja — selaras dengan CafeTable.area?: string di shared/types
 type TableArea = 'Indoor' | 'Outdoor' | 'Lantai Atas' | 'Lantai Bawah'
@@ -10,7 +10,7 @@ type TableArea = 'Indoor' | 'Outdoor' | 'Lantai Atas' | 'Lantai Bawah'
 type TableWithArea = CafeTable & { area?: TableArea }
 
 export function TablesPage() {
-  const { tables, business, upsertTable, removeTable } = useCafe()
+  const { tables, business, upsertTable, removeTable, updateBusiness } = useCafe()
 
   // State Modal Tambah Meja
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -25,6 +25,13 @@ export function TablesPage() {
 
   // State Modal Konfirmasi Hapus
   const [deletingTable, setDeletingTable] = useState<CafeTable | null>(null)
+
+  // State Drawer Edit QR (kustom estetika per-meja) — dipertahankan fallback
+  const [editingQrTable, setEditingQrTable] = useState<CafeTable | null>(null)
+  const [qrDraft, setQrDraft] = useState<QrConfig>({ showLogo: true, showTableNumber: true })
+  // State Drawer Edit QR Global (untuk keseluruhan struk)
+  const [isGlobalQrOpen, setIsGlobalQrOpen] = useState(false)
+  const [globalDraft, setGlobalDraft] = useState<QrConfig>({ showLogo: true, showTableNumber: true })
 
   // Buka Modal Tambah Meja dengan nomor meja otomatis
   function handleOpenAddModal() {
@@ -67,6 +74,82 @@ export function TablesPage() {
     window.print()
   }
 
+  function openQrEditor(t: CafeTable) {
+    setQrDraft({
+      title: t.qrConfig?.title ?? '',
+      subtitle: t.qrConfig?.subtitle ?? '',
+      instruction: t.qrConfig?.instruction ?? '',
+      extraText: t.qrConfig?.extraText ?? '',
+      showLogo: t.qrConfig?.showLogo ?? true,
+      showTableNumber: t.qrConfig?.showTableNumber ?? true,
+      accentColor: t.qrConfig?.accentColor ?? '#000000',
+    })
+    setEditingQrTable(t)
+  }
+
+  function saveQrConfig() {
+    if (!editingQrTable) return
+    const hasContent =
+      qrDraft.title?.trim() ||
+      qrDraft.subtitle?.trim() ||
+      qrDraft.instruction?.trim() ||
+      qrDraft.extraText?.trim() ||
+      qrDraft.accentColor !== '#000000' ||
+      !qrDraft.showLogo ||
+      !qrDraft.showTableNumber
+    const cfg: QrConfig | undefined = hasContent
+      ? {
+          title: qrDraft.title?.trim() || undefined,
+          subtitle: qrDraft.subtitle?.trim() || undefined,
+          instruction: qrDraft.instruction?.trim() || undefined,
+          extraText: qrDraft.extraText?.trim() || undefined,
+          showLogo: qrDraft.showLogo,
+          showTableNumber: qrDraft.showTableNumber,
+          accentColor: qrDraft.accentColor !== '#000000' ? qrDraft.accentColor : undefined,
+        }
+      : undefined
+    upsertTable({ ...editingQrTable, qrConfig: cfg })
+    setEditingQrTable(null)
+  }
+
+  function openGlobalQrEditor() {
+    const g = business.qrTemplate
+    setGlobalDraft({
+      title: g?.title ?? '',
+      subtitle: g?.subtitle ?? '',
+      instruction: g?.instruction ?? '',
+      extraText: g?.extraText ?? '',
+      showLogo: g?.showLogo ?? true,
+      showTableNumber: g?.showTableNumber ?? true,
+      accentColor: g?.accentColor ?? '#000000',
+    })
+    setIsGlobalQrOpen(true)
+  }
+
+  function saveGlobalQr() {
+    const hasContent =
+      globalDraft.title?.trim() ||
+      globalDraft.subtitle?.trim() ||
+      globalDraft.instruction?.trim() ||
+      globalDraft.extraText?.trim() ||
+      globalDraft.accentColor !== '#000000' ||
+      !globalDraft.showLogo ||
+      !globalDraft.showTableNumber
+    const cfg: QrConfig | undefined = hasContent
+      ? {
+          title: globalDraft.title?.trim() || undefined,
+          subtitle: globalDraft.subtitle?.trim() || undefined,
+          instruction: globalDraft.instruction?.trim() || undefined,
+          extraText: globalDraft.extraText?.trim() || undefined,
+          showLogo: globalDraft.showLogo,
+          showTableNumber: globalDraft.showTableNumber,
+          accentColor: globalDraft.accentColor !== '#000000' ? globalDraft.accentColor : undefined,
+        }
+      : undefined
+    updateBusiness({ qrTemplate: cfg })
+    setIsGlobalQrOpen(false)
+  }
+
   // Hitung ringkasan statistik meja
   const totalTables = tables.length
   const activeTables = tables.filter((t) => t.isActive).length
@@ -103,10 +186,16 @@ export function TablesPage() {
           <p className="text-stone">Kelola tata letak meja dan QR Code self-order pelanggan.</p>
         </div>
 
-        <Button onClick={handleOpenAddModal} className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          <span>Tambah Meja</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={openGlobalQrEditor} className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+            <span>Edit Struk</span>
+          </Button>
+          <Button onClick={handleOpenAddModal} className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span>Tambah Meja</span>
+          </Button>
+        </div>
       </div>
 
       {/* Ringkasan Statistik Meja */}
@@ -177,15 +266,18 @@ export function TablesPage() {
 
             {/* Bottom Actions */}
             <div className="flex items-center gap-2 border-t border-sand pt-3">
-              <Button
-                variant="outline"
-                // size="sm"
-                className="flex-1 text-xs"
-                onClick={() => setSelectedQRTable(t)}
-              >
+              <Button variant="outline" className="flex-1 text-xs" onClick={() => setSelectedQRTable(t)}>
                 <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
                 <span>Buka QR</span>
               </Button>
+              <button
+                type="button"
+                onClick={() => openQrEditor(t)}
+                className="flex size-9 items-center justify-center rounded-lg border border-clay/60 bg-white text-stone hover:border-black hover:text-black transition-colors"
+                title="Edit QR (kustom kata/logo)"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+              </button>
               <button
                 className="flex size-9 items-center justify-center rounded-lg border border-[#ba1a1a]/30 bg-white text-[#ba1a1a] hover:bg-[#ba1a1a]/10 transition-colors"
                 onClick={() => setDeletingTable(t)}
@@ -268,81 +360,254 @@ export function TablesPage() {
       )}
 
       {/* MODAL 3: PREVIEW & PRINT QR CODE UNIK */}
-      {selectedQRTable && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-[20px] bg-white p-6 shadow-2xl flex flex-col items-center">
-            <div className="w-full flex justify-between items-center border-b border-sand pb-3 mb-4">
-              <span className="font-bold text-black text-sm uppercase tracking-wider">Pratinjau QR Code</span>
-              <button onClick={() => setSelectedQRTable(null)} className="font-bold text-stone">✕</button>
-            </div>
-
-            {/* KARTU CETAK QR CODE UNIK */}
-            <div
-              id="printable-qr-card"
-              className="w-full max-w-xs rounded-2xl border-2 border-black bg-cream p-6 shadow-md text-center space-y-4"
-            >
-              {/* Branding Header */}
-              <div className="border-b-2 border-black pb-3">
-                <div className="mx-auto mb-1 flex size-10 items-center justify-center rounded-full bg-black text-white">
-                  <span className="material-symbols-outlined text-[20px]">local_cafe</span>
+      {selectedQRTable &&
+        (() => {
+          const globalCfg = business.qrTemplate
+          const cfg = selectedQRTable.qrConfig
+          const merged: QrConfig = {
+            title: globalCfg?.title ?? cfg?.title,
+            subtitle: globalCfg?.subtitle ?? cfg?.subtitle,
+            instruction: globalCfg?.instruction ?? cfg?.instruction,
+            extraText: globalCfg?.extraText ?? cfg?.extraText,
+            showLogo: globalCfg?.showLogo ?? cfg?.showLogo ?? true,
+            showTableNumber: globalCfg?.showTableNumber ?? cfg?.showTableNumber ?? true,
+            accentColor: globalCfg?.accentColor ?? cfg?.accentColor,
+          }
+          const qrTitle = merged.title?.trim() || business.name
+          const qrSubtitle = merged.subtitle?.trim() || (selectedQRTable.area || 'Indoor')
+          const qrInstruction = merged.instruction?.trim() || 'SCAN ME TO ORDER'
+          const qrExtra = merged.extraText?.trim() || 'Pesan & bayar langsung dari meja Anda'
+          const qrShowLogo = merged.showLogo ?? true
+          const qrShowTable = merged.showTableNumber ?? true
+          const qrAccent = merged.accentColor || '#000000'
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+              <div className="w-full max-w-md rounded-[20px] bg-white p-6 shadow-2xl flex flex-col items-center">
+                <div className="w-full flex justify-between items-center border-b border-sand pb-3 mb-4">
+                  <span className="font-bold text-black text-sm uppercase tracking-wider">Pratinjau QR Code</span>
+                  <button onClick={() => setSelectedQRTable(null)} className="font-bold text-stone">
+                    ✕
+                  </button>
                 </div>
-                <h2 className="font-display text-xl font-bold text-black uppercase tracking-tight">
-                  {business.name}
-                </h2>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-stone">
-                  {selectedQRTable.area || 'Indoor'}
-                </p>
-              </div>
 
-              {/* QR Code SVG Dummy Unique Graphic */}
-              <div className="mx-auto flex size-44 items-center justify-center rounded-xl bg-white p-3 border-2 border-black shadow-xs">
-                <svg className="size-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="100" height="100" fill="white" />
-                  {/* Position Marker Left Top */}
-                  <rect x="5" y="5" width="25" height="25" fill="black" />
-                  <rect x="9" y="9" width="17" height="17" fill="white" />
-                  <rect x="13" y="13" width="9" height="9" fill="black" />
-                  {/* Position Marker Right Top */}
-                  <rect x="70" y="5" width="25" height="25" fill="black" />
-                  <rect x="74" y="9" width="17" height="17" fill="white" />
-                  <rect x="78" y="13" width="9" height="9" fill="black" />
-                  {/* Position Marker Left Bottom */}
-                  <rect x="5" y="70" width="25" height="25" fill="black" />
-                  <rect x="9" y="74" width="17" height="17" fill="white" />
-                  <rect x="13" y="78" width="9" height="9" fill="black" />
-                  {/* Matrix Random Pattern */}
-                  <rect x="35" y="10" width="10" height="10" fill="black" />
-                  <rect x="50" y="15" width="15" height="10" fill="black" />
-                  <rect x="35" y="35" width="30" height="30" fill="black" />
-                  <rect x="40" y="40" width="20" height="20" fill="white" />
-                  <rect x="45" y="45" width="10" height="10" fill="black" />
-                  <rect x="70" y="40" width="15" height="15" fill="black" />
-                  <rect x="40" y="70" width="25" height="10" fill="black" />
-                  <rect x="70" y="75" width="20" height="15" fill="black" />
-                </svg>
-              </div>
+                <div
+                  id="printable-qr-card"
+                  className="w-full max-w-xs rounded-2xl border-2 bg-cream p-6 shadow-md text-center space-y-4"
+                  style={{ borderColor: qrAccent }}
+                >
+                  <div className="border-b-2 pb-3" style={{ borderColor: qrAccent }}>
+                    {qrShowLogo &&
+                      (business.logoUrl ? (
+                        <img src={business.logoUrl} alt="Logo" className="mx-auto mb-2 size-10 rounded-full object-cover border" />
+                      ) : (
+                        <div className="mx-auto mb-1 flex size-10 items-center justify-center rounded-full text-white" style={{ background: qrAccent }}>
+                          <span className="material-symbols-outlined text-[20px]">local_cafe</span>
+                        </div>
+                      ))}
+                    {!qrShowLogo && <div className="mx-auto mb-1 flex size-10 items-center justify-center rounded-full text-white" style={{ background: qrAccent }}><span className="material-symbols-outlined text-[20px]">local_cafe</span></div>}
+                    <h2 className="font-display text-xl font-bold uppercase tracking-tight" style={{ color: qrAccent }}>
+                      {qrTitle}
+                    </h2>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-stone">{qrSubtitle}</p>
+                  </div>
 
-              {/* Nomor Meja & Instruksi */}
-              <div>
-                <span className="inline-block rounded-lg bg-black px-4 py-1 text-xs font-bold text-white uppercase tracking-wider mb-2">
-                  MEJA {selectedQRTable.tableNumber}
-                </span>
-                <p className="text-xs font-bold text-black uppercase tracking-widest flex items-center justify-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-                  <span>SCAN ME TO ORDER</span>
-                </p>
-                <p className="text-[9px] text-stone mt-1">Pesan & bayar langsung dari meja Anda</p>
+                  <div className="mx-auto flex size-44 items-center justify-center rounded-xl bg-white p-3 border-2 shadow-xs" style={{ borderColor: qrAccent }}>
+                    <svg className="size-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="100" height="100" fill="white" />
+                      <rect x="5" y="5" width="25" height="25" fill="black" />
+                      <rect x="9" y="9" width="17" height="17" fill="white" />
+                      <rect x="13" y="13" width="9" height="9" fill="black" />
+                      <rect x="70" y="5" width="25" height="25" fill="black" />
+                      <rect x="74" y="9" width="17" height="17" fill="white" />
+                      <rect x="78" y="13" width="9" height="9" fill="black" />
+                      <rect x="5" y="70" width="25" height="25" fill="black" />
+                      <rect x="9" y="74" width="17" height="17" fill="white" />
+                      <rect x="13" y="78" width="9" height="9" fill="black" />
+                      <rect x="35" y="10" width="10" height="10" fill="black" />
+                      <rect x="50" y="15" width="15" height="10" fill="black" />
+                      <rect x="35" y="35" width="30" height="30" fill="black" />
+                      <rect x="40" y="40" width="20" height="20" fill="white" />
+                      <rect x="45" y="45" width="10" height="10" fill="black" />
+                      <rect x="70" y="40" width="15" height="15" fill="black" />
+                      <rect x="40" y="70" width="25" height="10" fill="black" />
+                      <rect x="70" y="75" width="20" height="15" fill="black" />
+                    </svg>
+                  </div>
+
+                  <div>
+                    {qrShowTable && (
+                      <span className="inline-block rounded-lg px-4 py-1 text-xs font-bold text-white uppercase tracking-wider mb-2" style={{ background: qrAccent }}>
+                        MEJA {selectedQRTable.tableNumber}
+                      </span>
+                    )}
+                    <p className="text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-1" style={{ color: qrAccent }}>
+                      <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                      <span>{qrInstruction}</span>
+                    </p>
+                    <p className="text-[9px] text-stone mt-1">{qrExtra}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex w-full gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setSelectedQRTable(null)}>
+                    Batal
+                  </Button>
+                  <Button className="flex-1 flex items-center justify-center gap-2" onClick={handlePrintQR}>
+                    <span className="material-symbols-outlined text-[18px]">print</span>
+                    <span>Cetak QR</span>
+                  </Button>
+                  <Button variant="outline" className="flex-1" onClick={() => openQrEditor(selectedQRTable)}>
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                    <span>Edit</span>
+                  </Button>
+                </div>
               </div>
             </div>
+          )
+        })()}
 
-            {/* Tombol Cetak & Tutup */}
-            <div className="mt-6 flex w-full gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setSelectedQRTable(null)}>
+      {/* DRAWER: EDIT QR GLOBAL */}
+      {isGlobalQrOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+          <div className="flex h-full w-full max-w-[380px] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-sand px-5 py-4">
+              <div>
+                <h3 className="font-bold text-black">Edit Struk (Global)</h3>
+                <p className="text-xs text-stone">Kustom untuk semua QR meja. Fallback per-meja tetap ada.</p>
+              </div>
+              <button onClick={() => setIsGlobalQrOpen(false)} className="flex size-8 items-center justify-center rounded-lg border border-clay/60 text-stone">
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              <div className="rounded-xl border border-sand bg-cream/40 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone">Preview</p>
+                <div className="mt-2 rounded-xl border-2 bg-cream p-4 text-center" style={{ borderColor: globalDraft.accentColor || '#000' }}>
+                  <div className="border-b-2 pb-2" style={{ borderColor: globalDraft.accentColor || '#000' }}>
+                    {globalDraft.showLogo && business.logoUrl && <img src={business.logoUrl} alt="Logo" className="mx-auto mb-1 size-8 rounded-full object-cover border" />}
+                    <p className="font-display text-sm font-bold uppercase" style={{ color: globalDraft.accentColor || '#000' }}>{globalDraft.title?.trim() || business.name}</p>
+                    <p className="text-[10px] uppercase text-stone">{globalDraft.subtitle?.trim() || 'Indoor'}</p>
+                  </div>
+                  <div className="mx-auto mt-2 size-20 rounded bg-white border p-1" style={{ borderColor: globalDraft.accentColor || '#000' }}>
+                    <div className="grid grid-cols-5 gap-0.5 h-full">
+                      {Array.from({ length: 25 }).map((_, i) => (
+                        <span key={i} className={`rounded-[1px] ${i % 2 === 0 ? 'bg-black' : 'bg-white'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  {globalDraft.showTableNumber && <p className="mt-2 inline-block rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: globalDraft.accentColor || '#000' }}>MEJA XX</p>}
+                  <p className="mt-1 text-[10px] font-bold uppercase" style={{ color: globalDraft.accentColor || '#000' }}>{globalDraft.instruction?.trim() || 'SCAN ME TO ORDER'}</p>
+                  {globalDraft.extraText?.trim() && <p className="text-[9px] text-stone">{globalDraft.extraText}</p>}
+                </div>
+              </div>
+              <Field label="Judul (default: nama bisnis)">
+                <TextInput value={globalDraft.title ?? ''} onChange={(e) => setGlobalDraft({ ...globalDraft, title: e.target.value })} placeholder={business.name} />
+              </Field>
+              <Field label="Subjudul">
+                <TextInput value={globalDraft.subtitle ?? ''} onChange={(e) => setGlobalDraft({ ...globalDraft, subtitle: e.target.value })} placeholder="Indoor" />
+              </Field>
+              <Field label="Instruksi">
+                <TextInput value={globalDraft.instruction ?? ''} onChange={(e) => setGlobalDraft({ ...globalDraft, instruction: e.target.value })} placeholder="SCAN ME TO ORDER" />
+              </Field>
+              <Field label="Teks tambahan">
+                <TextInput value={globalDraft.extraText ?? ''} onChange={(e) => setGlobalDraft({ ...globalDraft, extraText: e.target.value })} placeholder="Pesan & bayar langsung..." />
+              </Field>
+              <Field label="Warna Aksen">
+                <input type="color" value={globalDraft.accentColor || '#000000'} onChange={(e) => setGlobalDraft({ ...globalDraft, accentColor: e.target.value })} className="h-10 w-full rounded-lg border border-clay p-1" />
+              </Field>
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={globalDraft.showLogo} onChange={(e) => setGlobalDraft({ ...globalDraft, showLogo: e.target.checked })} className="size-4" />
+                Tampilkan Logo
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={globalDraft.showTableNumber} onChange={(e) => setGlobalDraft({ ...globalDraft, showTableNumber: e.target.checked })} className="size-4" />
+                Tampilkan Nomor Meja
+              </label>
+            </div>
+            <div className="flex gap-2 border-t border-sand px-5 py-4">
+              <Button variant="outline" className="flex-1" onClick={() => setIsGlobalQrOpen(false)}>Batal</Button>
+              <Button variant="outline" className="flex-1" onClick={() => setGlobalDraft({ showLogo: true, showTableNumber: true, accentColor: '#000000' })}>Reset</Button>
+              <Button className="flex-1" onClick={saveGlobalQr}>Simpan</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DRAWER: EDIT QR ESTETIKA (sidebar kanan) per-meja — dipertahankan fallback */}
+      {editingQrTable && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+          <div className="flex h-full w-full max-w-[380px] flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-sand px-5 py-4">
+              <div>
+                <h3 className="font-bold text-black">Edit QR Meja {editingQrTable.tableNumber}</h3>
+                <p className="text-xs text-stone">Kustom kata, logo & warna untuk estetika meja.</p>
+              </div>
+              <button onClick={() => setEditingQrTable(null)} className="flex size-8 items-center justify-center rounded-lg border border-clay/60 text-stone">
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              <div className="rounded-xl border border-sand bg-cream/40 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone">Preview</p>
+                <div className="mt-2 rounded-xl border-2 bg-cream p-4 text-center" style={{ borderColor: qrDraft.accentColor || '#000' }}>
+                  <div className="border-b-2 pb-2" style={{ borderColor: qrDraft.accentColor || '#000' }}>
+                    {qrDraft.showLogo && business.logoUrl && <img src={business.logoUrl} alt="Logo" className="mx-auto mb-1 size-8 rounded-full object-cover border" />}
+                    <p className="font-display text-sm font-bold uppercase" style={{ color: qrDraft.accentColor || '#000' }}>{qrDraft.title?.trim() || business.name}</p>
+                    <p className="text-[10px] uppercase text-stone">{qrDraft.subtitle?.trim() || editingQrTable.area || 'Indoor'}</p>
+                  </div>
+                  <div className="mx-auto mt-2 size-20 rounded bg-white border p-1" style={{ borderColor: qrDraft.accentColor || '#000' }}>
+                    <div className="grid grid-cols-5 gap-0.5 h-full">
+                      {Array.from({ length: 25 }).map((_, i) => (
+                        <span key={i} className={`rounded-[1px] ${i % 2 === 0 ? 'bg-black' : 'bg-white'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  {qrDraft.showTableNumber && <p className="mt-2 inline-block rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: qrDraft.accentColor || '#000' }}>MEJA {editingQrTable.tableNumber}</p>}
+                  <p className="mt-1 text-[10px] font-bold uppercase" style={{ color: qrDraft.accentColor || '#000' }}>{qrDraft.instruction?.trim() || 'SCAN ME TO ORDER'}</p>
+                </div>
+              </div>
+
+              <Field label="Judul (default: nama bisnis)">
+                <TextInput value={qrDraft.title ?? ''} onChange={(e) => setQrDraft({ ...qrDraft, title: e.target.value })} placeholder={business.name} />
+              </Field>
+              <Field label="Subjudul (default: area meja)">
+                <TextInput value={qrDraft.subtitle ?? ''} onChange={(e) => setQrDraft({ ...qrDraft, subtitle: e.target.value })} placeholder={editingQrTable.area || 'Indoor'} />
+              </Field>
+              <Field label="Instruksi">
+                <TextInput value={qrDraft.instruction ?? ''} onChange={(e) => setQrDraft({ ...qrDraft, instruction: e.target.value })} placeholder="SCAN ME TO ORDER" />
+              </Field>
+              <Field label="Teks tambahan">
+                <TextInput value={qrDraft.extraText ?? ''} onChange={(e) => setQrDraft({ ...qrDraft, extraText: e.target.value })} placeholder="Pesan & bayar langsung..." />
+              </Field>
+              <Field label="Warna Aksen">
+                <input type="color" value={qrDraft.accentColor || '#000000'} onChange={(e) => setQrDraft({ ...qrDraft, accentColor: e.target.value })} className="h-10 w-full rounded-lg border border-clay p-1" />
+              </Field>
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={qrDraft.showLogo} onChange={(e) => setQrDraft({ ...qrDraft, showLogo: e.target.checked })} className="size-4" />
+                Tampilkan Logo
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={qrDraft.showTableNumber} onChange={(e) => setQrDraft({ ...qrDraft, showTableNumber: e.target.checked })} className="size-4" />
+                Tampilkan Nomor Meja
+              </label>
+            </div>
+
+            <div className="flex gap-2 border-t border-sand px-5 py-4">
+              <Button variant="outline" className="flex-1" onClick={() => setEditingQrTable(null)}>
                 Batal
               </Button>
-              <Button className="flex-1 flex items-center justify-center gap-2" onClick={handlePrintQR}>
-                <span className="material-symbols-outlined text-[18px]">print</span>
-                <span>Cetak QR</span>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setQrDraft({ showLogo: true, showTableNumber: true, accentColor: '#000000' })
+                }}
+              >
+                Reset
+              </Button>
+              <Button className="flex-1" onClick={saveQrConfig}>
+                Simpan
               </Button>
             </div>
           </div>

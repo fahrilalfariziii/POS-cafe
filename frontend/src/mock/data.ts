@@ -51,12 +51,21 @@ export const seedBusiness: Business = {
   address: 'Jl. Senopati No. 12, Jakarta Selatan',
   phone: '021-555-0192',
   email: 'hello@beanbrew.id',
+  logoUrl: undefined,
+  taxEnabled: true,
+  taxLabel: 'PB1',
+  taxRate: 10,
+  taxBearer: 'customer',
+  serviceChargeEnabled: true,
+  serviceChargeRate: 5,
+  soundEnabled: true,
+  openingCash: 0,
 }
 
 export const seedStaff: StaffUser[] = [
-  { id: 'u-1', name: 'Amira Owner', email: 'owner@beanbrew.id', role: 'owner', active: true },
-  { id: 'u-2', name: 'Raka Kasir', email: 'kasir@beanbrew.id', role: 'kasir', active: true },
-  { id: 'u-3', name: 'Sinta Barista', email: 'barista@beanbrew.id', role: 'barista', active: true },
+  { id: 'u-1', name: 'Amira Owner', email: 'owner@beanbrew.id', role: 'owner', active: true, password: 'Owner123!' },
+  { id: 'u-2', name: 'Raka Kasir', email: 'kasir@beanbrew.id', role: 'kasir', active: true, password: 'Kasir123!' },
+  { id: 'u-3', name: 'Sinta Barista', email: 'barista@beanbrew.id', role: 'barista', active: true, password: 'Barista123!' },
 ]
 
 export const seedCategories: Category[] = [
@@ -188,8 +197,11 @@ export const seedOrders: Order[] = [
     paymentMethod: 'qris',
     paymentStatus: 'paid',
     subtotal: 90000,
-    tax: 9000,
-    total: 99000,
+    serviceCharge: 4500,
+    tax: 9450,
+    taxLabel: 'PB1',
+    taxBearer: 'customer',
+    total: 103950,
     createdAt: minutesAgo(12),
     syncStatus: 'synced',
     items: [
@@ -227,8 +239,11 @@ export const seedOrders: Order[] = [
     paymentMethod: 'cash',
     paymentStatus: 'pending',
     subtotal: 30000,
-    tax: 3000,
-    total: 33000,
+    serviceCharge: 1500,
+    tax: 3150,
+    taxLabel: 'PB1',
+    taxBearer: 'customer',
+    total: 34650,
     createdAt: minutesAgo(4),
     syncStatus: 'synced',
     items: [
@@ -256,8 +271,11 @@ export const seedOrders: Order[] = [
     paymentMethod: 'debit',
     paymentStatus: 'paid',
     subtotal: 70000,
-    tax: 7000,
-    total: 77000,
+    serviceCharge: 3500,
+    tax: 7350,
+    taxLabel: 'PB1',
+    taxBearer: 'customer',
+    total: 80850,
     createdAt: minutesAgo(28),
     syncStatus: 'synced',
     items: [
@@ -285,4 +303,4 @@ export const seedOrders: Order[] = [
   },
 ]
 
-export const TAX_PER_TRANSACTION = 2000
+export const TAX_PER_TRANSACTION = 0

@@ -4,10 +4,9 @@ import { useCafe } from '../../../mock/store'
 import type { CartItem, Product } from '../../../shared/types'
 import { formatRupiah } from '../../../shared/lib/format'
 import { Button } from '../../../shared/components/ui'
-import { TAX_PER_TRANSACTION } from '../../../mock/data'
 
 export function ManualOrderPage() {
-  const { products, categories, tables, placeOrder, connection } = useCafe()
+  const { products, categories, tables, placeOrder, connection, business } = useCafe()
   const navigate = useNavigate()
 
   // State Cart & Filter
@@ -51,10 +50,13 @@ export function ManualOrderPage() {
     return p.price + optionTotal
   }
 
-  // Kalkulasi Ringkasan Total
+  // Kalkulasi Ringkasan Total — sinkron dengan placeOrder (PB1/service + bearer)
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-  const tax = cart.length > 0 ? TAX_PER_TRANSACTION : 0
-  const total = subtotal + tax
+  const serviceCharge = cart.length > 0 && business.serviceChargeEnabled ? Math.round(subtotal * (business.serviceChargeRate / 100)) : 0
+  const taxBase = subtotal + serviceCharge
+  const rawTax = cart.length > 0 && business.taxEnabled ? Math.round(taxBase * (business.taxRate / 100)) : 0
+  const tax = rawTax
+  const total = business.taxEnabled && business.taxBearer === 'cafe' ? subtotal + serviceCharge : subtotal + serviceCharge + tax
 
   // Hitung Kembalian Otomatis
   const changeAmount = useMemo(() => {
@@ -127,7 +129,7 @@ export function ManualOrderPage() {
       offline: connection === 'offline',
     })
     setIsPayModalOpen(false)
-    navigate('/pos/orders')
+    navigate('/frontoffice/orders')
   }
 
   return (
@@ -247,10 +249,20 @@ export function ManualOrderPage() {
             <span>Subtotal</span>
             <span>{formatRupiah(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Pajak</span>
-            <span>{formatRupiah(tax)}</span>
-          </div>
+          {business.serviceChargeEnabled && serviceCharge > 0 && (
+            <div className="flex justify-between text-sm">
+              <span>Service {business.serviceChargeRate}%</span>
+              <span>{formatRupiah(serviceCharge)}</span>
+            </div>
+          )}
+          {business.taxEnabled && tax > 0 && (
+            <div className="flex justify-between text-sm">
+              <span>
+                {business.taxLabel} {business.taxRate}% {business.taxBearer === 'cafe' ? '(ditanggung kafe)' : ''}
+              </span>
+              <span>{formatRupiah(tax)}</span>
+            </div>
+          )}
           <div className="my-2 flex justify-between text-lg font-bold text-black">
             <span>Total</span>
             <span className="text-sage">{formatRupiah(total)}</span>

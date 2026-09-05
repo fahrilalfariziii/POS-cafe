@@ -2,10 +2,10 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useCafe } from '../../../mock/store'
 
 const NAV = [
-  { to: '/pos/orders', label: 'Orders', icon: 'receipt_long' },
-  { to: '/pos/catalog', label: 'Catalog', icon: 'menu_book' },
-  { to: '/pos/inventory', label: 'Inventory', icon: 'inventory_2' },
-  { to: '/pos/settings', label: 'Settings', icon: 'settings' },
+  { to: '/frontoffice/orders', label: 'Orders', icon: 'receipt_long' },
+  { to: '/frontoffice/catalog', label: 'Catalog', icon: 'menu_book' },
+  { to: '/frontoffice/inventory', label: 'Inventory', icon: 'inventory_2' },
+  { to: '/frontoffice/settings', label: 'Settings', icon: 'settings' },
 ]
 
 export function PosHeader() {
@@ -16,7 +16,13 @@ export function PosHeader() {
     <header className="flex h-16 items-center justify-between border-b border-[#c4c7c7] px-6">
       {/* Brand & Connection Status */}
       <div className="flex items-center gap-3">
-        <span className="font-display text-lg font-semibold">{business.name}</span>
+        {business.logoUrl ? (
+          <img src={business.logoUrl} alt="Logo" className="size-8 rounded-lg border border-sand object-cover" />
+        ) : null}
+        <div className="flex flex-col">
+          <span className="font-display text-lg font-semibold leading-none">{business.name}</span>
+          <span className="text-[11px] uppercase tracking-wider text-stone">Front Office</span>
+        </div>
         
         <button
           onClick={() => {
@@ -81,7 +87,7 @@ export function PosHeader() {
       {/* Action Buttons & User Session */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate('/pos/manual')}
+          onClick={() => navigate('/frontoffice/manual')}
           className="flex items-center gap-1.5 rounded-[12px] bg-black px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition-transform active:scale-95"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>

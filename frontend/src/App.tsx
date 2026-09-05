@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { CafeProvider } from "./mock/store";
-import { LandingPage } from "./features/landing/LandingPage";
+import { CafeProvider, useCafe } from "./mock/store";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RequireAuth } from "./features/auth/RequireAuth";
 import { SelfOrderApp } from "./features/self-order/SelfOrderApp";
@@ -23,22 +22,31 @@ import { StaffPage } from "./features/owner/pages/StaffPage";
 import { OwnerSettingsPage } from "./features/owner/pages/OwnerSettingsPage";
 import { ProfileSettingsPage } from "./features/owner/pages/settings/ProfileSettingsPage";
 import { CafeSettingsPage } from "./features/owner/pages/settings/CafeSettingsPage";
+import { TaxSettingsPage } from "./features/owner/pages/settings/TaxSettingsPage";
+
+function RootRedirect() {
+  const { session } = useCafe();
+  if (!session) return <Navigate to="/login" replace />;
+  if (session.user.role === "owner") return <Navigate to="/backoffice/dashboard" replace />;
+  return <Navigate to="/frontoffice/orders" replace />;
+}
+
 export default function App() {
   return (
     <CafeProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/order/:token" element={<SelfOrderApp />} />
 
-          {/* POS ROUTES */}
+          {/* FRONT OFFICE ROUTES (formerly POS) */}
           <Route
-            path="/pos"
+            path="/frontoffice"
             element={
               <RequireAuth
                 roles={["kasir", "barista", "owner"]}
-                redirectTo="/pos/orders"
+                redirectTo="/frontoffice/orders"
               >
                 <PosLayout />
               </RequireAuth>
@@ -52,11 +60,11 @@ export default function App() {
             <Route path="settings" element={<PosSettingsPage />} />
           </Route>
 
-          {/* OWNER ROUTES */}
+          {/* BACK OFFICE ROUTES (formerly OWNER) */}
           <Route
-            path="/owner"
+            path="/backoffice"
             element={
-              <RequireAuth roles={["owner"]} redirectTo="/owner/dashboard">
+              <RequireAuth roles={["owner"]} redirectTo="/backoffice/dashboard">
                 <OwnerLayout />
               </RequireAuth>
             }
@@ -83,9 +91,16 @@ export default function App() {
             <Route path="settings" element={<OwnerSettingsPage />}>
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<ProfileSettingsPage />} />
-              <Route path="cafe" element={<CafeSettingsPage />} />
+              <Route path="business" element={<CafeSettingsPage />} />
+              <Route path="tax" element={<TaxSettingsPage />} />
+              <Route path="cafe" element={<Navigate to="business" replace />} />
             </Route>
           </Route>
+
+          {/* Legacy redirects for backward compatibility */}
+          <Route path="/pos/*" element={<Navigate to="/frontoffice/orders" replace />} />
+          <Route path="/owner/*" element={<Navigate to="/backoffice/dashboard" replace />} />
+
           {/* 404 fallback — tidak mengganggu program, hanya tangani URL tidak dikenal */}
           <Route
             path="*"

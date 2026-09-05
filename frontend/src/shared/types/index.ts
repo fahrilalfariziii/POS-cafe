@@ -8,6 +8,9 @@ export type ConnectionStatus = 'online' | 'offline' | 'syncing'
 export type StockMovementType = 'in' | 'out' | 'adjustment' | 'waste'
 export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'failed'
 
+export type TaxLabel = 'PB1' | 'PBJT' | 'PPN'
+export type TaxBearer = 'customer' | 'cafe'
+
 export interface Business {
   id: string
   name: string
@@ -15,6 +18,16 @@ export interface Business {
   address: string
   phone: string
   email: string
+  logoUrl?: string
+  taxEnabled: boolean
+  taxLabel: TaxLabel
+  taxRate: number
+  taxBearer: TaxBearer
+  serviceChargeEnabled: boolean
+  serviceChargeRate: number
+  soundEnabled: boolean
+  openingCash: number
+  qrTemplate?: QrConfig
 }
 
 export interface StaffUser {
@@ -23,6 +36,17 @@ export interface StaffUser {
   email: string
   role: UserRole
   active: boolean
+  password: string
+}
+
+export interface QrConfig {
+  title?: string
+  subtitle?: string
+  instruction?: string
+  extraText?: string
+  showLogo: boolean
+  showTableNumber: boolean
+  accentColor?: string
 }
 
 export interface CafeTable {
@@ -31,6 +55,7 @@ export interface CafeTable {
   qrToken: string
   isActive: boolean
   area?: string
+  qrConfig?: QrConfig
 }
 
 export interface Category {
@@ -53,6 +78,7 @@ export interface Product {
   name: string
   description: string
   price: number
+  hpp?: number
   imageUrl: string
   isAvailable: boolean
   badge?: string
@@ -93,7 +119,10 @@ export interface Order {
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus
   subtotal: number
+  serviceCharge: number
   tax: number
+  taxLabel: TaxLabel
+  taxBearer: TaxBearer
   total: number
   createdAt: string
   items: OrderItem[]
